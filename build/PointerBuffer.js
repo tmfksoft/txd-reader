@@ -2,6 +2,9 @@
 // A basic Buffer wrapper to provide more complex pointer operations.
 Object.defineProperty(exports, "__esModule", { value: true });
 class PointerBuffer {
+    get rawData() {
+        return this.data;
+    }
     get hasMore() {
         if (this.pointer === this.data.length) {
             console.log("Has more === false");
@@ -15,6 +18,8 @@ class PointerBuffer {
         // It's slow but cool.
         this.pointer = 0;
         this.pointerHistory = [];
+        this.size = 0;
+        this.size = data.length;
     }
     pointerCheck(dataSize) {
         if (this.pointer + dataSize > this.data.length) {
@@ -47,8 +52,11 @@ class PointerBuffer {
     }
     readString(length) {
         // Trims null bytes
-        const str = this.readSection(length);
-        return str.toString().split(String.fromCharCode(0x00)).join("");
+        const rawBytes = this.readSection(length);
+        if (rawBytes.indexOf(0) > 0) {
+            return rawBytes.toString('utf-8', 0, rawBytes.indexOf(0));
+        }
+        return rawBytes.toString();
     }
     readChunks(length) {
         let chunks = [];
@@ -59,6 +67,7 @@ class PointerBuffer {
         }
         return chunks;
     }
+    // Forwards the pointer without read operations.
     forward(length) {
         this.pointer += length;
         this.pointerHistory.push(length);

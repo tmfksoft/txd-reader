@@ -1,5 +1,5 @@
 /// <reference types="node" />
-export default interface DXT1Block {
+export default interface DXT3Block {
     transparency: Buffer;
     color0: number;
     color1: number;

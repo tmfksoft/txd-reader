@@ -6,6 +6,11 @@ export default class PointerBuffer {
 	// It's slow but cool.
 	public pointer: number = 0;
 	public pointerHistory: number[] = [];
+	public size: number = 0;
+
+	public get rawData() {
+		return this.data;
+	}
 
 	public get hasMore() {
 		if (this.pointer === this.data.length) {
@@ -15,7 +20,9 @@ export default class PointerBuffer {
 		return true;
 	}
 
-	constructor(protected data: Buffer) {}
+	constructor(protected data: Buffer) {
+		this.size = data.length;
+	}
 
 	pointerCheck(dataSize: number) {
 		if (this.pointer + dataSize > this.data.length) {
@@ -53,8 +60,11 @@ export default class PointerBuffer {
 
 	readString(length: number) {
 		// Trims null bytes
-		const str = this.readSection(length);
-		return str.toString().split(String.fromCharCode(0x00)).join("");
+		const rawBytes = this.readSection(length);
+		if (rawBytes.indexOf(0) > 0 ) {
+			return rawBytes.toString('utf-8', 0, rawBytes.indexOf(0));
+		}
+		return rawBytes.toString();
 	}
 
 	readChunks(length: number) {
@@ -67,6 +77,7 @@ export default class PointerBuffer {
 		return chunks;
 	}
 
+	// Forwards the pointer without read operations.
 	forward(length: number) {
 		this.pointer += length;
 		this.pointerHistory.push(length);

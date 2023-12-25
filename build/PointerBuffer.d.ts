@@ -3,6 +3,8 @@ export default class PointerBuffer {
     protected data: Buffer;
     pointer: number;
     pointerHistory: number[];
+    size: number;
+    get rawData(): Buffer;
     get hasMore(): boolean;
     constructor(data: Buffer);
     pointerCheck(dataSize: number): void;
