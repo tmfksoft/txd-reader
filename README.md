@@ -8,8 +8,6 @@ const inputFile = "txd/bballcpark1.txd";
 const filePath = path.join(__dirname, "..", inputFile);
 const rawData = fs.readFileSync(filePath);
 
-console.log(`Read ${rawData.length} bytes from ${inputFile}`);
-
 const reader = new TXDReader(rawData);
 
 for (let textureName of reader.textureList) {
