@@ -1,5 +1,5 @@
 import RGBA from "./interfaces/RGBA";
-import Canvas from 'canvas';
+import Canvas from '@napi-rs/canvas';
 export default class Util {
     static from565(RGB565: number): RGBA;
     static lerp(start: number, end: number, t: number): number;

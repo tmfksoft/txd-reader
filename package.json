@@ -1,6 +1,6 @@
 {
   "name": "@majesticfudgie/txd-reader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "build/index.js",
   "license": "MIT",
   "typings": "build/index.d.ts",
@@ -12,6 +12,6 @@
     "@types/node": "^20.10.5"
   },
   "dependencies": {
-    "canvas": "^2.11.2"
+    "@napi-rs/canvas": "^0.1.53"
   }
 }

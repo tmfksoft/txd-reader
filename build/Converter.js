@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const canvas_1 = __importDefault(require("canvas"));
+const canvas_1 = __importDefault(require("@napi-rs/canvas"));
 const PointerBuffer_1 = __importDefault(require("./PointerBuffer"));
 const Util_1 = __importDefault(require("./Util"));
 // Returning the raw PNG Buffer
@@ -51,7 +51,7 @@ class Converter {
             canvasData.data[i + 3] = col.A;
         }
         ctx.putImageData(canvasData, 0, 0);
-        const rawImage = canvas.toBuffer();
+        const rawImage = canvas.encodeSync('png');
         return rawImage;
     }
     static fromPAL8(textureData) {
@@ -81,7 +81,7 @@ class Converter {
             canvasData.data[i + 3] = col.A; // A
         }
         ctx.putImageData(canvasData, 0, 0);
-        const rawImage = canvas.toBuffer();
+        const rawImage = canvas.encodeSync('png');
         return rawImage;
     }
     static fromDXT1(textureData) {
@@ -139,7 +139,7 @@ class Converter {
             Util_1.default.setPixel(blockX + 0, blockY + 3, dxtPalette[index15], canvasData);
         }
         ctx.putImageData(canvasData, 0, 0);
-        const rawImage = canvas.toBuffer();
+        const rawImage = canvas.encodeSync('png');
         return rawImage;
     }
     static fromDXT3(textureData) {
@@ -232,7 +232,7 @@ class Converter {
             Util_1.default.setPixel(blockX + 0, blockY + 3, Object.assign(Object.assign({}, dxtPalette[index15]), { A: (transparencyGrid[3][1] * 17) }), canvasData);
         }
         ctx.putImageData(canvasData, 0, 0);
-        const rawImage = canvas.toBuffer();
+        const rawImage = canvas.encodeSync('png');
         return rawImage;
     }
 }

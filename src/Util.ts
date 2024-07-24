@@ -1,5 +1,5 @@
 import RGBA from "./interfaces/RGBA";
-import Canvas from 'canvas';
+import Canvas from '@napi-rs/canvas';
 
 // Useful methods
 export default class Util {

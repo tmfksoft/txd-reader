@@ -1,4 +1,4 @@
-import Canvas from 'canvas';
+import Canvas from '@napi-rs/canvas';
 
 // Converts various texture formats to PNG
 
@@ -67,7 +67,7 @@ export default class Converter {
 
 		ctx.putImageData(canvasData, 0, 0);
 
-		const rawImage = canvas.toBuffer();
+		const rawImage = canvas.encodeSync('png');
 		return rawImage;
 	}
 
@@ -106,7 +106,7 @@ export default class Converter {
 
 		ctx.putImageData(canvasData, 0, 0);
 
-		const rawImage = canvas.toBuffer();
+		const rawImage = canvas.encodeSync('png');
 
 		return rawImage;
 	}
@@ -187,7 +187,7 @@ export default class Converter {
 		
 		ctx.putImageData(canvasData, 0, 0);
 
-		const rawImage = canvas.toBuffer();
+		const rawImage = canvas.encodeSync('png');
 
 		return rawImage;
 
@@ -305,7 +305,7 @@ export default class Converter {
 		
 		ctx.putImageData(canvasData, 0, 0);
 
-		const rawImage = canvas.toBuffer();
+		const rawImage = canvas.encodeSync('png');
 		return rawImage;
 
 	}
