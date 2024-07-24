@@ -119,7 +119,7 @@ class TXDReader {
 		txdFile.chunks.push(infoChunk);
 
 		for (let textureIndex = 0; textureIndex < infoChunk.count; textureIndex++) {
-			console.log(`Reading Texture ${(textureIndex+1)}/${infoChunk.count}`);
+			//console.log(`Reading Texture ${(textureIndex+1)}/${infoChunk.count}`);
 
 			const newChunk = this.parseChunk(this.rawData, false);
 			if (!newChunk) {
@@ -144,7 +144,7 @@ class TXDReader {
 		// Read the chunk id.
 		chunk.id = data.readUint32();
 	
-		console.log(`Chunk ID: ${chunk.id}`);
+		//console.log(`Chunk ID: ${chunk.id}`);
 		
 		
 		if (chunk.id === 0x01 && !hadInfo) {
@@ -186,7 +186,7 @@ class TXDReader {
 			if (!dataChunk) {
 				throw new Error("Error reading TXD Texture. Missing data chunk!");
 			}
-			console.log(dataChunk);
+			//console.log(dataChunk);
 	
 			if (!extraInfo) {
 				throw new Error("Error reading TXD Texture. Missing info chunk!");
@@ -257,7 +257,7 @@ class TXDReader {
 			// Now to read mipmaps!
 			for (let mm=0; mm < (textureData.mipmap_count - 1); mm++) {
 				const dataSize = data.readUint32();
-				console.log(`Mipmap ${mm}: Size: ${dataSize}`);
+				//console.log(`Mipmap ${mm}: Size: ${dataSize}`);
 				textureData.mipmaps.push({
 					data_size: dataSize,
 					data: data.readSection(dataSize)

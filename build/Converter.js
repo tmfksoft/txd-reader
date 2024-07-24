@@ -99,7 +99,7 @@ class Converter {
                 colorData: smartBlock.readSection(4),
             });
         }
-        console.log(`Read ${blocks.length} blocks.`);
+        //console.log(`Read ${blocks.length} blocks.`);
         for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
             const dxtBlock = blocks[blockIndex];
             const dxtPalette = Util_1.default.interpolate565(dxtBlock.color0, dxtBlock.color1);
@@ -158,7 +158,7 @@ class Converter {
                 colorData: smartBlock.readSection(4),
             });
         }
-        console.log(`Read ${blocks.length} blocks.`);
+        //console.log(`Read ${blocks.length} blocks.`);
         for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
             const dxtBlock = blocks[blockIndex];
             const dxtPalette = Util_1.default.interpolate565(dxtBlock.color0, dxtBlock.color1);

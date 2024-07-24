@@ -7,7 +7,7 @@ class PointerBuffer {
     }
     get hasMore() {
         if (this.pointer === this.data.length) {
-            console.log("Has more === false");
+            //console.log("Has more === false");
             return false;
         }
         return true;

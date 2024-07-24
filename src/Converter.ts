@@ -129,7 +129,7 @@ export default class Converter {
 			});
 		}
 
-		console.log(`Read ${blocks.length} blocks.`);
+		//console.log(`Read ${blocks.length} blocks.`);
 
 		for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
 			const dxtBlock = blocks[blockIndex];
@@ -212,7 +212,7 @@ export default class Converter {
 			});
 		}
 
-		console.log(`Read ${blocks.length} blocks.`);
+		//console.log(`Read ${blocks.length} blocks.`);
 
 		for (let blockIndex=0; blockIndex<blocks.length; blockIndex++) {
 			const dxtBlock = blocks[blockIndex];
