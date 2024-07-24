@@ -16,7 +16,7 @@ declare class TXDReader {
     constructor(data: Buffer);
     getTexture(textureName: string): Texture | null;
     hasTexture(name: string): boolean;
-    getPNG(name: string): Buffer | null;
+    getPNG(name: string): Promise<Buffer | null>;
     private populateTextureList;
     private parseFile;
     private parseChunk;

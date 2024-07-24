@@ -1,5 +1,3 @@
-import Canvas from '@napi-rs/canvas';
-
 // Converts various texture formats to PNG
 
 import Texture from "./interfaces/Texture";
@@ -13,7 +11,7 @@ import DXT3Block from './interfaces/formats/DXT3Block';
 // Returning the raw PNG Buffer
 export default class Converter {
 
-	static convert(texture: Texture): Buffer {
+	static async convert(texture: Texture): Promise<Buffer> {
 		if (texture.chunks.length <= 0) {
 			throw new Error("Texture doesn't contain any data chunks!");
 		}
@@ -44,39 +42,32 @@ export default class Converter {
 		throw new Error(`Unknown Format ${texFormat}!`);
 	}
 
-	static fromBGRA(textureData: TextureData): Buffer {
-		const canvas = Canvas.createCanvas(textureData.width, textureData.height);
-		const ctx = canvas.getContext("2d");
+	static async fromBGRA(textureData: TextureData): Promise<Buffer> {
 		
 		const texData = new PointerBuffer(textureData.data);
-		const canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		const pixelData = Util.createPixelData(textureData.width, textureData.height);
 		
-		for (let i=0; i<canvasData.data.length; i+=4) {
+		for (let i=0; i<pixelData.data.length; i+=4) {
 			const col = {
 				B: texData.readUint8(),
 				G: texData.readUint8(),
 				R: texData.readUint8(),
 				A: texData.readUint8(),
 			};
-			canvasData.data[i] = col.R; // R
-			canvasData.data[i+1] = col.G; // G
-			canvasData.data[i+2] = col.B; // B
-			canvasData.data[i+3] = col.A;
+			pixelData.data[i] = col.R; // R
+			pixelData.data[i+1] = col.G; // G
+			pixelData.data[i+2] = col.B; // B
+			pixelData.data[i+3] = col.A;
 
 		}
 
-		ctx.putImageData(canvasData, 0, 0);
-
-		const rawImage = canvas.encodeSync('png');
+		const rawImage = await Util.toPNG(pixelData);
 		return rawImage;
 	}
 
-	static fromPAL8(textureData: TextureData): Buffer {
-		const canvas = Canvas.createCanvas(textureData.width, textureData.height);
-		const ctx = canvas.getContext("2d");
-		
+	static async fromPAL8(textureData: TextureData): Promise<Buffer> {
+		const pixelData = Util.createPixelData(textureData.width, textureData.height);
 		const texData = new PointerBuffer(textureData.data);
-		const canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
 
 		const paletteData = new PointerBuffer(textureData.palette);
@@ -93,29 +84,24 @@ export default class Converter {
 		}
 
 
-		for (let i=0; i<canvasData.data.length; i+=4) {
+		for (let i=0; i<pixelData.data.length; i+=4) {
 			const col = palette[texData.readUint8()];
 			if (typeof col === "undefined") {
 				console.error("Missing Palette Colour!")
 			}
-			canvasData.data[i] = col.R; // R
-			canvasData.data[i+1] = col.G; // G
-			canvasData.data[i+2] = col.B; // B
-			canvasData.data[i+3] = col.A; // A
+			pixelData.data[i] = col.R; // R
+			pixelData.data[i+1] = col.G; // G
+			pixelData.data[i+2] = col.B; // B
+			pixelData.data[i+3] = col.A; // A
 		}
 
-		ctx.putImageData(canvasData, 0, 0);
-
-		const rawImage = canvas.encodeSync('png');
-
+		const rawImage = await Util.toPNG(pixelData);
 		return rawImage;
 	}
-	static fromDXT1(textureData: TextureData): Buffer {
-		const canvas = Canvas.createCanvas(textureData.width, textureData.height);
-		const ctx = canvas.getContext("2d");
+	static async fromDXT1(textureData: TextureData): Promise<Buffer> {
 		
+		const pixelData = Util.createPixelData(textureData.width, textureData.height);
 		const texData = new PointerBuffer(textureData.data);
-		const canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
 		const rawBlocks = texData.readChunks(8);
 		const blocks: DXT1Block[] = [];
@@ -163,41 +149,35 @@ export default class Converter {
 			const blockX = blockIndex % Math.ceil(textureData.width / 4) * 4;
 			const blockY = Math.floor(blockIndex / Math.ceil(textureData.width / 4)) * 4;
 
-			Util.setPixel(blockX + 3 , blockY + 0, dxtPalette[index0], canvasData);
-			Util.setPixel(blockX + 2 , blockY + 0, dxtPalette[index1], canvasData);
-			Util.setPixel(blockX + 1 , blockY + 0, dxtPalette[index2], canvasData);
-			Util.setPixel(blockX + 0 , blockY + 0, dxtPalette[index3], canvasData);
+			Util.setPixel(blockX + 3 , blockY + 0, dxtPalette[index0], pixelData);
+			Util.setPixel(blockX + 2 , blockY + 0, dxtPalette[index1], pixelData);
+			Util.setPixel(blockX + 1 , blockY + 0, dxtPalette[index2], pixelData);
+			Util.setPixel(blockX + 0 , blockY + 0, dxtPalette[index3], pixelData);
 
-			Util.setPixel(blockX + 3 , blockY + 1, dxtPalette[index4], canvasData);
-			Util.setPixel(blockX + 2 , blockY + 1, dxtPalette[index5], canvasData);
-			Util.setPixel(blockX + 1 , blockY + 1, dxtPalette[index6], canvasData);
-			Util.setPixel(blockX + 0 , blockY + 1, dxtPalette[index7], canvasData);
+			Util.setPixel(blockX + 3 , blockY + 1, dxtPalette[index4], pixelData);
+			Util.setPixel(blockX + 2 , blockY + 1, dxtPalette[index5], pixelData);
+			Util.setPixel(blockX + 1 , blockY + 1, dxtPalette[index6], pixelData);
+			Util.setPixel(blockX + 0 , blockY + 1, dxtPalette[index7], pixelData);
 
-			Util.setPixel(blockX + 3 , blockY + 2, dxtPalette[index8], canvasData);
-			Util.setPixel(blockX + 2 , blockY + 2, dxtPalette[index9], canvasData);
-			Util.setPixel(blockX + 1 , blockY + 2, dxtPalette[index10], canvasData);
-			Util.setPixel(blockX + 0 , blockY + 2, dxtPalette[index11], canvasData);
+			Util.setPixel(blockX + 3 , blockY + 2, dxtPalette[index8], pixelData);
+			Util.setPixel(blockX + 2 , blockY + 2, dxtPalette[index9], pixelData);
+			Util.setPixel(blockX + 1 , blockY + 2, dxtPalette[index10], pixelData);
+			Util.setPixel(blockX + 0 , blockY + 2, dxtPalette[index11], pixelData);
 
-			Util.setPixel(blockX + 3 , blockY + 3, dxtPalette[index12], canvasData);
-			Util.setPixel(blockX + 2 , blockY + 3, dxtPalette[index13], canvasData);
-			Util.setPixel(blockX + 1 , blockY + 3, dxtPalette[index14], canvasData);
-			Util.setPixel(blockX + 0 , blockY + 3, dxtPalette[index15], canvasData);
+			Util.setPixel(blockX + 3 , blockY + 3, dxtPalette[index12], pixelData);
+			Util.setPixel(blockX + 2 , blockY + 3, dxtPalette[index13], pixelData);
+			Util.setPixel(blockX + 1 , blockY + 3, dxtPalette[index14], pixelData);
+			Util.setPixel(blockX + 0 , blockY + 3, dxtPalette[index15], pixelData);
 
 		}
-		
-		ctx.putImageData(canvasData, 0, 0);
 
-		const rawImage = canvas.encodeSync('png');
-
+		const rawImage = await Util.toPNG(pixelData);
 		return rawImage;
 
 	}
-	static fromDXT3(textureData: TextureData): Buffer {
-		const canvas = Canvas.createCanvas(textureData.width, textureData.height);
-		const ctx = canvas.getContext("2d");
-		
+	static async fromDXT3(textureData: TextureData): Promise<Buffer> {
+		const pixelData = Util.createPixelData(textureData.width, textureData.height);
 		const texData = new PointerBuffer(textureData.data);
-		const canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
 		const rawBlocks = texData.readChunks(16);
 		const blocks: DXT3Block[] = [];
@@ -281,31 +261,29 @@ export default class Converter {
 			const blockX = blockIndex % Math.ceil(textureData.width / 4) * 4;
 			const blockY = Math.floor(blockIndex / Math.ceil(textureData.width / 4)) * 4;
 
-			Util.setPixel(blockX + 3 , blockY + 0, { ...dxtPalette[index0], A: (transparencyGrid[0][2] * 17) }, canvasData);
-			Util.setPixel(blockX + 2 , blockY + 0, { ...dxtPalette[index1], A: (transparencyGrid[0][3] * 17) }, canvasData);
-			Util.setPixel(blockX + 1 , blockY + 0, { ...dxtPalette[index2], A: (transparencyGrid[0][0] * 17) }, canvasData);
-			Util.setPixel(blockX + 0 , blockY + 0, { ...dxtPalette[index3], A: (transparencyGrid[0][1] * 17) }, canvasData);
+			Util.setPixel(blockX + 3 , blockY + 0, { ...dxtPalette[index0], A: (transparencyGrid[0][2] * 17) }, pixelData);
+			Util.setPixel(blockX + 2 , blockY + 0, { ...dxtPalette[index1], A: (transparencyGrid[0][3] * 17) }, pixelData);
+			Util.setPixel(blockX + 1 , blockY + 0, { ...dxtPalette[index2], A: (transparencyGrid[0][0] * 17) }, pixelData);
+			Util.setPixel(blockX + 0 , blockY + 0, { ...dxtPalette[index3], A: (transparencyGrid[0][1] * 17) }, pixelData);
 
-			Util.setPixel(blockX + 3 , blockY + 1, { ...dxtPalette[index4], A: (transparencyGrid[1][2] * 17) }, canvasData);
-			Util.setPixel(blockX + 2 , blockY + 1, { ...dxtPalette[index5], A: (transparencyGrid[1][3] * 17) }, canvasData);
-			Util.setPixel(blockX + 1 , blockY + 1, { ...dxtPalette[index6], A: (transparencyGrid[1][0] * 17) }, canvasData);
-			Util.setPixel(blockX + 0 , blockY + 1, { ...dxtPalette[index7], A: (transparencyGrid[1][1] * 17) }, canvasData);
+			Util.setPixel(blockX + 3 , blockY + 1, { ...dxtPalette[index4], A: (transparencyGrid[1][2] * 17) }, pixelData);
+			Util.setPixel(blockX + 2 , blockY + 1, { ...dxtPalette[index5], A: (transparencyGrid[1][3] * 17) }, pixelData);
+			Util.setPixel(blockX + 1 , blockY + 1, { ...dxtPalette[index6], A: (transparencyGrid[1][0] * 17) }, pixelData);
+			Util.setPixel(blockX + 0 , blockY + 1, { ...dxtPalette[index7], A: (transparencyGrid[1][1] * 17) }, pixelData);
 
-			Util.setPixel(blockX + 3 , blockY + 2, { ...dxtPalette[index8], A: (transparencyGrid[2][2] * 17) }, canvasData);
-			Util.setPixel(blockX + 2 , blockY + 2, { ...dxtPalette[index9], A: (transparencyGrid[2][3] * 17) }, canvasData);
-			Util.setPixel(blockX + 1 , blockY + 2, { ...dxtPalette[index10], A: (transparencyGrid[2][0] * 17) }, canvasData);
-			Util.setPixel(blockX + 0 , blockY + 2, { ...dxtPalette[index11], A: (transparencyGrid[2][1] * 17) }, canvasData);
+			Util.setPixel(blockX + 3 , blockY + 2, { ...dxtPalette[index8], A: (transparencyGrid[2][2] * 17) }, pixelData);
+			Util.setPixel(blockX + 2 , blockY + 2, { ...dxtPalette[index9], A: (transparencyGrid[2][3] * 17) }, pixelData);
+			Util.setPixel(blockX + 1 , blockY + 2, { ...dxtPalette[index10], A: (transparencyGrid[2][0] * 17) }, pixelData);
+			Util.setPixel(blockX + 0 , blockY + 2, { ...dxtPalette[index11], A: (transparencyGrid[2][1] * 17) }, pixelData);
 
-			Util.setPixel(blockX + 3 , blockY + 3, { ...dxtPalette[index12], A: (transparencyGrid[3][2] * 17) }, canvasData);
-			Util.setPixel(blockX + 2 , blockY + 3, { ...dxtPalette[index13], A: (transparencyGrid[3][3] * 17) }, canvasData);
-			Util.setPixel(blockX + 1 , blockY + 3, { ...dxtPalette[index14], A: (transparencyGrid[3][0] * 17) }, canvasData);
-			Util.setPixel(blockX + 0 , blockY + 3, { ...dxtPalette[index15], A: (transparencyGrid[3][1] * 17) }, canvasData);
+			Util.setPixel(blockX + 3 , blockY + 3, { ...dxtPalette[index12], A: (transparencyGrid[3][2] * 17) }, pixelData);
+			Util.setPixel(blockX + 2 , blockY + 3, { ...dxtPalette[index13], A: (transparencyGrid[3][3] * 17) }, pixelData);
+			Util.setPixel(blockX + 1 , blockY + 3, { ...dxtPalette[index14], A: (transparencyGrid[3][0] * 17) }, pixelData);
+			Util.setPixel(blockX + 0 , blockY + 3, { ...dxtPalette[index15], A: (transparencyGrid[3][1] * 17) }, pixelData);
 
 		}
 		
-		ctx.putImageData(canvasData, 0, 0);
-
-		const rawImage = canvas.encodeSync('png');
+		const rawImage = await Util.toPNG(pixelData)
 		return rawImage;
 
 	}

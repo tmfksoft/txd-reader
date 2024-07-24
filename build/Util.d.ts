@@ -1,5 +1,6 @@
+/// <reference types="node" />
+import PixelData from "./interfaces/PixelData";
 import RGBA from "./interfaces/RGBA";
-import Canvas from '@napi-rs/canvas';
 export default class Util {
     static from565(RGB565: number): RGBA;
     static lerp(start: number, end: number, t: number): number;
@@ -10,5 +11,7 @@ export default class Util {
         A: number;
     };
     static interpolate565(color0: number, color1: number): RGBA[];
-    static setPixel(x: number, y: number, colour: RGBA, imageData: Canvas.ImageData): void;
+    static setPixel(x: number, y: number, colour: RGBA, pixelData: PixelData): void;
+    static createPixelData(width: number, height: number): PixelData;
+    static toPNG(pixelData: PixelData): Promise<Buffer>;
 }

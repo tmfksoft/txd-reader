@@ -62,7 +62,7 @@ class TXDReader {
 		return false;
 	}
 
-	public getPNG(name: string): Buffer | null {
+	public async getPNG(name: string): Promise<Buffer | null> {
 		const tex = this.getTexture(name);
 		if (!tex) {
 			return null;
