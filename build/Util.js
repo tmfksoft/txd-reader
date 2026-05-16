@@ -47,6 +47,8 @@ class Util {
         return colors;
     }
     static setPixel(x, y, colour, pixelData) {
+        if (x < 0 || x >= pixelData.width || y < 0 || y >= pixelData.height)
+            return;
         const pixelIndex = (y * pixelData.width + x) * 4;
         pixelData.data[pixelIndex] = colour.R;
         pixelData.data[pixelIndex + 1] = colour.G;

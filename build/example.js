@@ -27,15 +27,18 @@ function processTXD(filePath) {
         const textures = txd.getTextures();
         console.log(`[${name}] ${textures.length} textures`);
         for (const tex of textures) {
-            try {
-                const { width, height, data } = tex.getPixelData();
-                const pngBuf = yield (0, sharp_1.default)(data, {
-                    raw: { width, height, channels: 4 },
-                }).png().toBuffer();
-                fs_1.default.writeFileSync(path_1.default.join(fileOutDir, `${tex.name}.png`), pngBuf);
-            }
-            catch (e) {
-                console.warn(`  [${tex.name}] failed: ${e.message}`);
+            for (let level = 0; level < tex.mipmapCount; level++) {
+                try {
+                    const { width, height, data } = tex.getMipmap(level);
+                    const pngBuf = yield (0, sharp_1.default)(data, {
+                        raw: { width, height, channels: 4 },
+                    }).png().toBuffer();
+                    const suffix = level === 0 ? '' : `_${level}`;
+                    fs_1.default.writeFileSync(path_1.default.join(fileOutDir, `${tex.name}${suffix}.png`), pngBuf);
+                }
+                catch (e) {
+                    console.warn(`  [${tex.name}] level ${level} failed: ${e.message}`);
+                }
             }
         }
     });

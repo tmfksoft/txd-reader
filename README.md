@@ -64,7 +64,7 @@ for (const tex of textures) {
 
 ### Decoding pixel data
 
-`getPixelData()` decodes the texture and returns raw RGBA pixel data.
+`getPixelData()` decodes the base (full-resolution) texture and returns raw RGBA pixel data.
 
 ```ts
 const tex = txd.getTextures()[0];
@@ -78,6 +78,24 @@ You can also decode by name via `TXDReader` directly:
 ```ts
 const pixelData = txd.getPixelData('ws_skidmarks'); // PixelData | null
 ```
+
+---
+
+### Decoding mipmaps
+
+`getMipmap(level)` decodes a specific mipmap level. Level `0` is the base (full-resolution) texture, level `1` is half-size, level `2` is quarter-size, and so on. Each level halves both dimensions down to a minimum of 1×1.
+
+```ts
+const tex = txd.getTextures()[0];
+console.log(tex.mipmapCount); // e.g. 8
+
+for (let level = 0; level < tex.mipmapCount; level++) {
+    const { width, height, data } = tex.getMipmap(level);
+    console.log(`Level ${level}: ${width}x${height}`);
+}
+```
+
+`getMipmap` throws if `level` is out of range.
 
 ---
 
@@ -138,8 +156,9 @@ new TXDReader(data: Uint8Array)
 | `height` | `number` | Height in pixels |
 | `depth` | `number` | Colour depth in bits |
 | `format` | `string` | Texture format (`"DXT1"`, `"DXT3"`, `"BGRA32"`, `"PAL8"`, etc.) |
-| `mipmapCount` | `number` | Number of mipmaps stored |
-| `getPixelData()` | `PixelData` | Decode and return raw RGBA pixel data |
+| `mipmapCount` | `number` | Number of mipmap levels (including the base texture) |
+| `getPixelData()` | `PixelData` | Decode and return the base (level 0) texture as raw RGBA pixel data |
+| `getMipmap(level)` | `PixelData` | Decode and return raw RGBA pixel data for the given mipmap level (0 = base) |
 
 ### `PixelData`
 

@@ -7,45 +7,56 @@ const PointerBuffer_1 = __importDefault(require("./PointerBuffer"));
 const Util_1 = __importDefault(require("./Util"));
 class Converter {
     static convert(texture) {
+        return this.convertLevel(texture, 0);
+    }
+    static convertMipmap(texture, level) {
+        return this.convertLevel(texture, level);
+    }
+    static convertLevel(texture, level) {
         if (texture.chunks.length <= 0) {
             throw new Error("Texture doesn't contain any data chunks!");
         }
         const textureData = texture.chunks[0];
-        const texFormat = textureData.direct3d_texture_format;
+        let slice;
+        if (level === 0) {
+            slice = textureData;
+        }
+        else {
+            const mipIndex = level - 1;
+            if (mipIndex >= textureData.mipmaps.length) {
+                throw new Error(`Mipmap level ${level} does not exist (${textureData.mipmaps.length} additional level(s) available)`);
+            }
+            const mip = textureData.mipmaps[mipIndex];
+            slice = Object.assign(Object.assign({}, textureData), { data: mip.data, data_size: mip.data_size, width: Math.max(1, textureData.width >> level), height: Math.max(1, textureData.height >> level) });
+        }
+        const texFormat = slice.direct3d_texture_format;
         if (texFormat === 21 || texFormat === 22) {
-            // GTA:SA uncompressed BGRA/BGR
-            return this.fromBGRA(textureData);
+            return this.fromBGRA(slice);
         }
         if (texFormat === 1) {
-            // GTA3/VC uncompressed: data_size matches width * height * bytes-per-pixel
-            // GTA:VC DXT1:          data_size matches width * height / 2
-            const uncompressedSize = textureData.width * textureData.height * Math.ceil(textureData.depth / 8);
-            if (textureData.data_size === uncompressedSize) {
-                return this.fromBGRA(textureData);
+            const uncompressedSize = slice.width * slice.height * Math.ceil(slice.depth / 8);
+            if (slice.data_size === uncompressedSize) {
+                return this.fromBGRA(slice);
             }
-            const dxt1Size = (textureData.width / 4) * (textureData.height / 4) * 8;
-            if (textureData.data_size === dxt1Size) {
-                return this.fromDXT1(textureData);
+            const dxt1Size = Math.ceil(slice.width / 4) * Math.ceil(slice.height / 4) * 8;
+            if (slice.data_size === dxt1Size) {
+                return this.fromDXT1(slice);
             }
-            const dxt3Size = (textureData.width / 4) * (textureData.height / 4) * 16;
-            if (textureData.data_size === dxt3Size) {
-                return this.fromDXT3(textureData);
+            const dxt3Size = Math.ceil(slice.width / 4) * Math.ceil(slice.height / 4) * 16;
+            if (slice.data_size === dxt3Size) {
+                return this.fromDXT3(slice);
             }
-            throw new Error(`Format 1: data_size ${textureData.data_size} doesn't match uncompressed (${uncompressedSize}), DXT1 (${dxt1Size}), or DXT3 (${dxt3Size})`);
+            throw new Error(`Format 1: data_size ${slice.data_size} doesn't match uncompressed (${uncompressedSize}), DXT1 (${dxt1Size}), or DXT3 (${dxt3Size})`);
         }
-        if (texFormat === 0 && textureData.flags === 0) {
-            // PAL 8
-            return this.fromPAL8(textureData);
+        if (texFormat === 0 && slice.flags === 0) {
+            return this.fromPAL8(slice);
         }
         if (texFormat === 827611204) {
-            // DXT1
-            return this.fromDXT1(textureData);
+            return this.fromDXT1(slice);
         }
         if (texFormat === 861165636) {
-            // DXT3
-            return this.fromDXT3(textureData);
+            return this.fromDXT3(slice);
         }
-        // Unknown format
         throw new Error(`Unknown Format ${texFormat}!`);
     }
     static fromBGRA(textureData) {

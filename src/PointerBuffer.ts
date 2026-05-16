@@ -64,7 +64,7 @@ export default class PointerBuffer {
 	readString(length: number) {
 		const rawBytes = this.readSection(length);
 		const nullIdx = rawBytes.indexOf(0);
-		const bytes = nullIdx > 0 ? rawBytes.subarray(0, nullIdx) : rawBytes;
+		const bytes = nullIdx >= 0 ? rawBytes.subarray(0, nullIdx) : rawBytes;
 		return new TextDecoder('utf-8').decode(bytes);
 	}
 

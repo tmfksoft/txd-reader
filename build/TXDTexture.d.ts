@@ -11,4 +11,5 @@ export default class TXDTexture {
     private readonly chunk;
     constructor(chunk: Texture);
     getPixelData(): PixelData;
+    getMipmap(level: number): PixelData;
 }

@@ -20,6 +20,9 @@ class TXDTexture {
     getPixelData() {
         return Converter_1.default.convert(this.chunk);
     }
+    getMipmap(level) {
+        return Converter_1.default.convertMipmap(this.chunk, level);
+    }
 }
 exports.default = TXDTexture;
 //# sourceMappingURL=TXDTexture.js.map

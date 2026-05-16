@@ -29,4 +29,8 @@ export default class TXDTexture {
 	getPixelData(): PixelData {
 		return Converter.convert(this.chunk);
 	}
+
+	getMipmap(level: number): PixelData {
+		return Converter.convertMipmap(this.chunk, level);
+	}
 }

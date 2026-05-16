@@ -16,14 +16,17 @@ async function processTXD(filePath: string) {
 	console.log(`[${name}] ${textures.length} textures`);
 
 	for (const tex of textures) {
-		try {
-			const { width, height, data } = tex.getPixelData();
-			const pngBuf = await sharp(data, {
-				raw: { width, height, channels: 4 },
-			}).png().toBuffer();
-			fs.writeFileSync(path.join(fileOutDir, `${tex.name}.png`), pngBuf as unknown as Uint8Array);
-		} catch (e) {
-			console.warn(`  [${tex.name}] failed: ${(e as Error).message}`);
+		for (let level = 0; level < tex.mipmapCount; level++) {
+			try {
+				const { width, height, data } = tex.getMipmap(level);
+				const pngBuf = await sharp(data, {
+					raw: { width, height, channels: 4 },
+				}).png().toBuffer();
+				const suffix = level === 0 ? '' : `_${level}`;
+				fs.writeFileSync(path.join(fileOutDir, `${tex.name}${suffix}.png`), pngBuf as unknown as Uint8Array);
+			} catch (e) {
+				console.warn(`  [${tex.name}] level ${level} failed: ${(e as Error).message}`);
+			}
 		}
 	}
 }
