@@ -6,6 +6,8 @@ Works in both **Node.js** and the **browser**. The library decodes textures to r
 
 Supported texture formats: DXT1, DXT3, BGRA32, RGB32, PAL8.
 
+> **AI notice:** This library has been maintained and improved with the assistance of AI (Claude by Anthropic). If you prefer a version with no AI involvement, use [v1.0.3](https://github.com/tmfksoft/txd-reader/tree/3005ba5).
+
 ---
 
 ## Installation
