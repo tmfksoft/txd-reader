@@ -1,5 +1,3 @@
-import path from 'path';
-import fs, { read } from 'fs';
 import TXDChunk from './interfaces/TXDChunk';
 import TXDFile from './interfaces/TXDFile';
 import TXDInfo from './interfaces/TXDInfo';
@@ -8,6 +6,8 @@ import Texture from './interfaces/Texture';
 import TextureData from './interfaces/TextureData';
 import ExtraInfo from './interfaces/ExtraInfo';
 import Converter from './Converter';
+import PixelData from './interfaces/PixelData';
+import TXDTexture from './TXDTexture';
 class TXDReader {
 
 	public rawData: PointerBuffer;
@@ -31,7 +31,7 @@ class TXDReader {
 	};
 
 
-	constructor(protected data: Buffer) {
+	constructor(protected data: Uint8Array) {
 		this.rawData = new PointerBuffer(data);
 		this.parsed = this.parseFile();
 		this.populateTextureList();
@@ -62,7 +62,13 @@ class TXDReader {
 		return false;
 	}
 
-	public async getPNG(name: string): Promise<Buffer | null> {
+	public getTextures(): TXDTexture[] {
+		return this.parsed.chunks
+			.filter(ch => ch.id === 0x15)
+			.map(ch => new TXDTexture(ch as Texture));
+	}
+
+	public getPixelData(name: string): PixelData | null {
 		const tex = this.getTexture(name);
 		if (!tex) {
 			return null;
@@ -221,7 +227,9 @@ class TXDReader {
 			if (typeof this.DXVER[textureData.direct3d_texture_format] !== "undefined") {
 				textureData.metadata.direct3dTextureFormat = this.DXVER[textureData.direct3d_texture_format];
 			} else {
-				if (textureData.direct3d_texture_format === 21) {
+				if (textureData.direct3d_texture_format === 1) {
+					textureData.metadata.direct3dTextureFormat = "BGRA32";
+				} else if (textureData.direct3d_texture_format === 21) {
 					textureData.metadata.direct3dTextureFormat = "RGBA32";
 				} else if (textureData.direct3d_texture_format === 22) {
 					textureData.metadata.direct3dTextureFormat = "RGB32";

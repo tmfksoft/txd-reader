@@ -13,11 +13,11 @@ export default interface TextureData extends TXDChunk {
 	mipmap_count: number,
 	texcode_type: number,
 	flags: number,
-	palette: Buffer,
+	palette: Uint8Array,
 	data_size: number,
-	data: Buffer,
-	mipmaps: { 
+	data: Uint8Array,
+	mipmaps: {
 		data_size: number,
-		data: Buffer,
+		data: Uint8Array,
 	}[],
 }

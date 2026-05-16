@@ -1,7 +1,6 @@
-/// <reference types="node" />
 export default interface DXT3Block {
-    transparency: Buffer;
+    transparency: Uint8Array;
     color0: number;
     color1: number;
-    colorData: Buffer;
+    colorData: Uint8Array;
 }

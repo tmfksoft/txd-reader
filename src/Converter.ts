@@ -1,5 +1,3 @@
-// Converts various texture formats to PNG
-
 import Texture from "./interfaces/Texture";
 import TextureData from "./interfaces/TextureData";
 import PointerBuffer from './PointerBuffer';
@@ -7,11 +5,11 @@ import RGBA from './interfaces/RGBA';
 import DXT1Block from './interfaces/formats/DXT1Block';
 import Util from './Util';
 import DXT3Block from './interfaces/formats/DXT3Block';
+import PixelData from "./interfaces/PixelData";
 
-// Returning the raw PNG Buffer
 export default class Converter {
 
-	static async convert(texture: Texture): Promise<Buffer> {
+	static convert(texture: Texture): PixelData {
 		if (texture.chunks.length <= 0) {
 			throw new Error("Texture doesn't contain any data chunks!");
 		}
@@ -19,8 +17,26 @@ export default class Converter {
 		const texFormat = textureData.direct3d_texture_format;
 
 		if (texFormat === 21 || texFormat === 22) {
-			// BGRA
+			// GTA:SA uncompressed BGRA/BGR
 			return this.fromBGRA(textureData);
+		}
+
+		if (texFormat === 1) {
+			// GTA3/VC uncompressed: data_size matches width * height * bytes-per-pixel
+			// GTA:VC DXT1:          data_size matches width * height / 2
+			const uncompressedSize = textureData.width * textureData.height * Math.ceil(textureData.depth / 8);
+			if (textureData.data_size === uncompressedSize) {
+				return this.fromBGRA(textureData);
+			}
+			const dxt1Size = (textureData.width / 4) * (textureData.height / 4) * 8;
+			if (textureData.data_size === dxt1Size) {
+				return this.fromDXT1(textureData);
+			}
+			const dxt3Size = (textureData.width / 4) * (textureData.height / 4) * 16;
+			if (textureData.data_size === dxt3Size) {
+				return this.fromDXT3(textureData);
+			}
+			throw new Error(`Format 1: data_size ${textureData.data_size} doesn't match uncompressed (${uncompressedSize}), DXT1 (${dxt1Size}), or DXT3 (${dxt3Size})`);
 		}
 
 		if (texFormat === 0 && textureData.flags === 0) {
@@ -42,11 +58,10 @@ export default class Converter {
 		throw new Error(`Unknown Format ${texFormat}!`);
 	}
 
-	static async fromBGRA(textureData: TextureData): Promise<Buffer> {
-		
+	static fromBGRA(textureData: TextureData): PixelData {
 		const texData = new PointerBuffer(textureData.data);
 		const pixelData = Util.createPixelData(textureData.width, textureData.height);
-		
+
 		for (let i=0; i<pixelData.data.length; i+=4) {
 			const col = {
 				B: texData.readUint8(),
@@ -54,21 +69,18 @@ export default class Converter {
 				R: texData.readUint8(),
 				A: texData.readUint8(),
 			};
-			pixelData.data[i] = col.R; // R
-			pixelData.data[i+1] = col.G; // G
-			pixelData.data[i+2] = col.B; // B
+			pixelData.data[i] = col.R;
+			pixelData.data[i+1] = col.G;
+			pixelData.data[i+2] = col.B;
 			pixelData.data[i+3] = col.A;
-
 		}
 
-		const rawImage = await Util.toPNG(pixelData);
-		return rawImage;
+		return pixelData;
 	}
 
-	static async fromPAL8(textureData: TextureData): Promise<Buffer> {
+	static fromPAL8(textureData: TextureData): PixelData {
 		const pixelData = Util.createPixelData(textureData.width, textureData.height);
 		const texData = new PointerBuffer(textureData.data);
-
 
 		const paletteData = new PointerBuffer(textureData.palette);
 		const palette: RGBA[] = [];
@@ -83,22 +95,20 @@ export default class Converter {
 			});
 		}
 
-
 		for (let i=0; i<pixelData.data.length; i+=4) {
 			const col = palette[texData.readUint8()];
 			if (typeof col === "undefined") {
 				console.error("Missing Palette Colour!")
 			}
-			pixelData.data[i] = col.R; // R
-			pixelData.data[i+1] = col.G; // G
-			pixelData.data[i+2] = col.B; // B
-			pixelData.data[i+3] = col.A; // A
+			pixelData.data[i] = col.R;
+			pixelData.data[i+1] = col.G;
+			pixelData.data[i+2] = col.B;
+			pixelData.data[i+3] = col.A;
 		}
 
-		const rawImage = await Util.toPNG(pixelData);
-		return rawImage;
+		return pixelData;
 	}
-	static async fromDXT1(textureData: TextureData): Promise<Buffer> {
+	static fromDXT1(textureData: TextureData): PixelData {
 		
 		const pixelData = Util.createPixelData(textureData.width, textureData.height);
 		const texData = new PointerBuffer(textureData.data);
@@ -171,11 +181,10 @@ export default class Converter {
 
 		}
 
-		const rawImage = await Util.toPNG(pixelData);
-		return rawImage;
+		return pixelData;
 
 	}
-	static async fromDXT3(textureData: TextureData): Promise<Buffer> {
+	static fromDXT3(textureData: TextureData): PixelData {
 		const pixelData = Util.createPixelData(textureData.width, textureData.height);
 		const texData = new PointerBuffer(textureData.data);
 
@@ -283,8 +292,7 @@ export default class Converter {
 
 		}
 		
-		const rawImage = await Util.toPNG(pixelData)
-		return rawImage;
+		return pixelData;
 
 	}
 }

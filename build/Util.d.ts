@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import PixelData from "./interfaces/PixelData";
 import RGBA from "./interfaces/RGBA";
 export default class Util {
@@ -13,5 +12,4 @@ export default class Util {
     static interpolate565(color0: number, color1: number): RGBA[];
     static setPixel(x: number, y: number, colour: RGBA, pixelData: PixelData): void;
     static createPixelData(width: number, height: number): PixelData;
-    static toPNG(pixelData: PixelData): Promise<Buffer>;
 }

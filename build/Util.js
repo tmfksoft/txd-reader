@@ -1,18 +1,5 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const sharp_1 = __importDefault(require("sharp"));
 // Useful methods
 class Util {
     // Yoinked from ChatGPT...
@@ -66,27 +53,12 @@ class Util {
         pixelData.data[pixelIndex + 2] = colour.B;
         pixelData.data[pixelIndex + 3] = colour.A;
     }
-    // Creates an empty pixel data object filled with 0's
     static createPixelData(width, height) {
-        const pixelData = new Array(width * height * 4).fill(0);
         return {
-            width, height,
-            data: pixelData
+            width,
+            height,
+            data: new Uint8Array(width * height * 4),
         };
-    }
-    static toPNG(pixelData) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const sharpImage = (0, sharp_1.default)(Buffer.from(pixelData.data), {
-                raw: {
-                    width: pixelData.width,
-                    height: pixelData.height,
-                    channels: 4,
-                }
-            });
-            const png = sharpImage.png();
-            const pngBuf = yield png.toBuffer();
-            return pngBuf;
-        });
     }
 }
 exports.default = Util;

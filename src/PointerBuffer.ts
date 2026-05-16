@@ -8,6 +8,8 @@ export default class PointerBuffer {
 	public pointerHistory: number[] = [];
 	public size: number = 0;
 
+	private view: DataView;
+
 	public get rawData() {
 		return this.data;
 	}
@@ -20,8 +22,9 @@ export default class PointerBuffer {
 		return true;
 	}
 
-	constructor(protected data: Buffer) {
+	constructor(protected data: Uint8Array) {
 		this.size = data.length;
+		this.view = new DataView(data.buffer, data.byteOffset, data.byteLength);
 	}
 
 	pointerCheck(dataSize: number) {
@@ -32,26 +35,26 @@ export default class PointerBuffer {
 
 	readUint32() {
 		this.pointerCheck(4);
-		const num = this.data.readUint32LE(this.pointer);
+		const num = this.view.getUint32(this.pointer, true);
 		this.forward(4);
 		return num;
 	}
 
 	readUint16() {
 		this.pointerCheck(2);
-		const num = this.data.readUint16LE(this.pointer);
+		const num = this.view.getUint16(this.pointer, true);
 		this.forward(2);
 		return num;
 	}
 
 	readUint8() {
 		this.pointerCheck(1);
-		const num = this.data.readUint8(this.pointer);
+		const num = this.view.getUint8(this.pointer);
 		this.forward(1);
 		return num;
 	}
 
-	readSection(length: number) {
+	readSection(length: number): Uint8Array {
 		this.pointerCheck(length);
 		const section = this.data.subarray(this.pointer, this.pointer + length);
 		this.forward(length);
@@ -59,16 +62,14 @@ export default class PointerBuffer {
 	}
 
 	readString(length: number) {
-		// Trims null bytes
 		const rawBytes = this.readSection(length);
-		if (rawBytes.indexOf(0) > 0 ) {
-			return rawBytes.toString('utf-8', 0, rawBytes.indexOf(0));
-		}
-		return rawBytes.toString();
+		const nullIdx = rawBytes.indexOf(0);
+		const bytes = nullIdx > 0 ? rawBytes.subarray(0, nullIdx) : rawBytes;
+		return new TextDecoder('utf-8').decode(bytes);
 	}
 
-	readChunks(length: number) {
-		let chunks: Buffer[] = [];
+	readChunks(length: number): Uint8Array[] {
+		let chunks: Uint8Array[] = [];
 		const chunkCount = Math.floor((this.data.length - this.pointer) / length);
 		for (let i=0; i<chunkCount; i++) {
 			const chunk = this.readSection(length);

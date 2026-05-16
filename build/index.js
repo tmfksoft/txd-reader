@@ -1,19 +1,11 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const PointerBuffer_1 = __importDefault(require("./PointerBuffer"));
 const Converter_1 = __importDefault(require("./Converter"));
+const TXDTexture_1 = __importDefault(require("./TXDTexture"));
 class TXDReader {
     constructor(data) {
         this.data = data;
@@ -60,14 +52,17 @@ class TXDReader {
         }
         return false;
     }
-    getPNG(name) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const tex = this.getTexture(name);
-            if (!tex) {
-                return null;
-            }
-            return Converter_1.default.convert(tex);
-        });
+    getTextures() {
+        return this.parsed.chunks
+            .filter(ch => ch.id === 0x15)
+            .map(ch => new TXDTexture_1.default(ch));
+    }
+    getPixelData(name) {
+        const tex = this.getTexture(name);
+        if (!tex) {
+            return null;
+        }
+        return Converter_1.default.convert(tex);
     }
     populateTextureList() {
         this.textureList = [];
@@ -180,7 +175,10 @@ class TXDReader {
                 textureData.metadata.direct3dTextureFormat = this.DXVER[textureData.direct3d_texture_format];
             }
             else {
-                if (textureData.direct3d_texture_format === 21) {
+                if (textureData.direct3d_texture_format === 1) {
+                    textureData.metadata.direct3dTextureFormat = "BGRA32";
+                }
+                else if (textureData.direct3d_texture_format === 21) {
                     textureData.metadata.direct3dTextureFormat = "RGBA32";
                 }
                 else if (textureData.direct3d_texture_format === 22) {

@@ -1,4 +1,3 @@
-import sharp from "sharp";
 import PixelData from "./interfaces/PixelData";
 import RGBA from "./interfaces/RGBA";
 
@@ -42,7 +41,7 @@ export default class Util {
 
 		colors.push(this.lerpColor(c0, c1, 0));
 		colors.push(this.lerpColor(c0, c1, 1));
-		
+
 		if (color0 > color1) {
 			// Add 2 colours
 			colors.push(this.lerpColor(c0, c1, 0.33));
@@ -60,6 +59,7 @@ export default class Util {
 
 		return colors;
 	}
+
 	static setPixel(x: number, y: number, colour: RGBA, pixelData: PixelData) {
 		const pixelIndex = (y * pixelData.width + x) * 4;
 		pixelData.data[pixelIndex] = colour.R;
@@ -68,29 +68,11 @@ export default class Util {
 		pixelData.data[pixelIndex + 3] = colour.A;
 	}
 
-	// Creates an empty pixel data object filled with 0's
 	static createPixelData(width: number, height: number): PixelData {
-		const pixelData = new Array(width * height * 4).fill(0) as number[];
-
 		return {
-			width, height,
-			data: pixelData
+			width,
+			height,
+			data: new Uint8Array(width * height * 4),
 		};
-	}
-
-	static async toPNG(pixelData: PixelData): Promise<Buffer> {
-		const sharpImage = sharp(
-			Buffer.from(pixelData.data),
-			{
-				raw: {
-					width: pixelData.width,
-					height: pixelData.height,
-					channels: 4,
-				}
-			}
-		);
-		const png = sharpImage.png();
-		const pngBuf = await png.toBuffer();
-		return pngBuf;
 	}
 }

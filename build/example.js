@@ -15,24 +15,40 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const _1 = __importDefault(require("."));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
+const sharp_1 = __importDefault(require("sharp"));
+const txdDir = path_1.default.join(__dirname, "..", "txd");
+const outDir = path_1.default.join(__dirname, "..", "out");
+function processTXD(filePath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const name = path_1.default.basename(filePath, '.txd');
+        const fileOutDir = path_1.default.join(outDir, name);
+        fs_1.default.mkdirSync(fileOutDir, { recursive: true });
+        const txd = new _1.default(new Uint8Array(fs_1.default.readFileSync(filePath)));
+        const textures = txd.getTextures();
+        console.log(`[${name}] ${textures.length} textures`);
+        for (const tex of textures) {
+            try {
+                const { width, height, data } = tex.getPixelData();
+                const pngBuf = yield (0, sharp_1.default)(data, {
+                    raw: { width, height, channels: 4 },
+                }).png().toBuffer();
+                fs_1.default.writeFileSync(path_1.default.join(fileOutDir, `${tex.name}.png`), pngBuf);
+            }
+            catch (e) {
+                console.warn(`  [${tex.name}] failed: ${e.message}`);
+            }
+        }
+    });
+}
 function start() {
     return __awaiter(this, void 0, void 0, function* () {
-        // This is an example of how to use TXDReader and to test it.
-        const filePath = path_1.default.join(__dirname, "..", "txd", "burgsh01_law.txd");
-        const outDir = path_1.default.join(__dirname, "..", "out");
-        if (!fs_1.default.existsSync(filePath)) {
-            throw new Error("No such TXD");
+        const files = fs_1.default.readdirSync(txdDir).filter(f => f.toLowerCase().endsWith('.txd'));
+        if (files.length === 0) {
+            console.warn("No TXD files found in", txdDir);
+            return;
         }
-        const fileData = fs_1.default.readFileSync(filePath);
-        const txd = new _1.default(fileData);
-        console.log(`Read %s textures`, txd.textureList.length, txd.textureList);
-        for (let texture of txd.textureList) {
-            const pngBuf = yield txd.getPNG(texture);
-            if (!pngBuf) {
-                console.warn("Failed to read PNG for %s", texture);
-                continue;
-            }
-            fs_1.default.writeFileSync(path_1.default.join(outDir, `${texture}.png`), pngBuf);
+        for (const file of files) {
+            yield processTXD(path_1.default.join(txdDir, file));
         }
     });
 }

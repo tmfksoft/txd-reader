@@ -1,5 +1,5 @@
 export default interface PixelData {
 	width: number,
 	height: number,
-	data: number[],
+	data: Uint8Array,
 }

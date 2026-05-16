@@ -1,9 +1,10 @@
-/// <reference types="node" />
 import TXDFile from './interfaces/TXDFile';
 import PointerBuffer from './PointerBuffer';
 import Texture from './interfaces/Texture';
+import PixelData from './interfaces/PixelData';
+import TXDTexture from './TXDTexture';
 declare class TXDReader {
-    protected data: Buffer;
+    protected data: Uint8Array;
     rawData: PointerBuffer;
     textureList: string[];
     parsed: TXDFile;
@@ -13,10 +14,11 @@ declare class TXDReader {
     DXVER: {
         [key: number]: string;
     };
-    constructor(data: Buffer);
+    constructor(data: Uint8Array);
     getTexture(textureName: string): Texture | null;
     hasTexture(name: string): boolean;
-    getPNG(name: string): Promise<Buffer | null>;
+    getTextures(): TXDTexture[];
+    getPixelData(name: string): PixelData | null;
     private populateTextureList;
     private parseFile;
     private parseChunk;

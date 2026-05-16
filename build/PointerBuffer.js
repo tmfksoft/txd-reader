@@ -20,6 +20,7 @@ class PointerBuffer {
         this.pointerHistory = [];
         this.size = 0;
         this.size = data.length;
+        this.view = new DataView(data.buffer, data.byteOffset, data.byteLength);
     }
     pointerCheck(dataSize) {
         if (this.pointer + dataSize > this.data.length) {
@@ -28,19 +29,19 @@ class PointerBuffer {
     }
     readUint32() {
         this.pointerCheck(4);
-        const num = this.data.readUint32LE(this.pointer);
+        const num = this.view.getUint32(this.pointer, true);
         this.forward(4);
         return num;
     }
     readUint16() {
         this.pointerCheck(2);
-        const num = this.data.readUint16LE(this.pointer);
+        const num = this.view.getUint16(this.pointer, true);
         this.forward(2);
         return num;
     }
     readUint8() {
         this.pointerCheck(1);
-        const num = this.data.readUint8(this.pointer);
+        const num = this.view.getUint8(this.pointer);
         this.forward(1);
         return num;
     }
@@ -51,12 +52,10 @@ class PointerBuffer {
         return section;
     }
     readString(length) {
-        // Trims null bytes
         const rawBytes = this.readSection(length);
-        if (rawBytes.indexOf(0) > 0) {
-            return rawBytes.toString('utf-8', 0, rawBytes.indexOf(0));
-        }
-        return rawBytes.toString();
+        const nullIdx = rawBytes.indexOf(0);
+        const bytes = nullIdx > 0 ? rawBytes.subarray(0, nullIdx) : rawBytes;
+        return new TextDecoder('utf-8').decode(bytes);
     }
     readChunks(length) {
         let chunks = [];
