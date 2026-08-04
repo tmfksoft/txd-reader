@@ -43,39 +43,118 @@ export default class Converter {
 
 		const texFormat = slice.direct3d_texture_format;
 
+		// Explicit FourCCs are unambiguous wherever they appear.
+		if (texFormat === 827611204) { // 'DXT1'
+			return this.fromDXT1(slice);
+		}
+
+		if (texFormat === 861165636) { // 'DXT3'
+			return this.fromDXT3(slice);
+		}
+
+		// D3DFMT_A8R8G8B8 / D3DFMT_X8R8G8B8 - always 32bpp.
 		if (texFormat === 21 || texFormat === 22) {
 			return this.fromBGRA(slice);
 		}
 
-		if (texFormat === 1) {
-			const uncompressedSize = slice.width * slice.height * Math.ceil(slice.depth / 8);
-			if (slice.data_size === uncompressedSize) {
+		const dxt1Size = Math.ceil(slice.width / 4) * Math.ceil(slice.height / 4) * 8;
+		const dxt3Size = Math.ceil(slice.width / 4) * Math.ceil(slice.height / 4) * 16;
+
+		// Everything else is a GTA III / Vice City style header, where this
+		// field isn't a D3D format at all - it's a plain "has alpha" flag, so
+		// it only ever holds 0 or 1 and says nothing about the pixel layout.
+		// The bit depth is what actually describes that, and it's reliable:
+		// the parser only reads a palette when depth is 8.
+		//
+		// Dispatching on the format field instead used to send III's 32bpp
+		// textures through the paletted decoder and its 8bpp textures through
+		// the 32bpp one - half of GTA III's textures failed to decode.
+		if (slice.depth === 8) {
+			if (slice.data_size === slice.width * slice.height) {
+				return this.fromPAL8(slice);
+			}
+		}
+
+		if (slice.depth === 16) {
+			if (slice.data_size === slice.width * slice.height * 2) {
+				return this.from16Bit(slice);
+			}
+		}
+
+		if (slice.depth === 32) {
+			if (slice.data_size === slice.width * slice.height * 4) {
 				return this.fromBGRA(slice);
 			}
-			const dxt1Size = Math.ceil(slice.width / 4) * Math.ceil(slice.height / 4) * 8;
-			if (slice.data_size === dxt1Size) {
-				return this.fromDXT1(slice);
-			}
-			const dxt3Size = Math.ceil(slice.width / 4) * Math.ceil(slice.height / 4) * 16;
-			if (slice.data_size === dxt3Size) {
-				return this.fromDXT3(slice);
-			}
-			throw new Error(`Format 1: data_size ${slice.data_size} doesn't match uncompressed (${uncompressedSize}), DXT1 (${dxt1Size}), or DXT3 (${dxt3Size})`);
 		}
 
-		if (texFormat === 0 && slice.flags === 0) {
-			return this.fromPAL8(slice);
-		}
-
-		if (texFormat === 827611204) {
+		// Compressed data can carry any nominal depth, so fall back to
+		// matching the payload size against the block-compressed layouts.
+		if (slice.data_size === dxt1Size) {
 			return this.fromDXT1(slice);
 		}
 
-		if (texFormat === 861165636) {
+		if (slice.data_size === dxt3Size) {
 			return this.fromDXT3(slice);
 		}
 
-		throw new Error(`Unknown Format ${texFormat}!`);
+		throw new Error(
+			`Unable to identify texture layout: format field ${texFormat}, depth ${slice.depth}, ` +
+			`${slice.width}x${slice.height}, data_size ${slice.data_size} ` +
+			`(expected ${slice.width * slice.height} paletted, ${slice.width * slice.height * 4} 32bpp, ` +
+			`${dxt1Size} DXT1 or ${dxt3Size} DXT3)`,
+		);
+	}
+
+	/**
+	 * Decodes the 16 bit uncompressed layouts.
+	 *
+	 * Which one it is comes from RenderWare's raster format rather than
+	 * being guessed at - the field this reader calls `alpha_flags` is
+	 * actually rasterFormat, whose bits 8-11 hold the format code (1 =
+	 * 1555, 2 = 565, 3 = 4444, 7 = 555). GTA III's 16 bit textures are all
+	 * 1555; the others are handled because they cost nothing to support and
+	 * Vice City hasn't been checked.
+	 */
+	static from16Bit(textureData: TextureData): PixelData {
+		const texData = new PointerBuffer(textureData.data);
+		const pixelData = Util.createPixelData(textureData.width, textureData.height);
+
+		const formatCode = (textureData.alpha_flags >> 8) & 0x0F;
+
+		// Widen a 4/5/6 bit channel to 8 bits by repeating its high bits into
+		// the gap, so full-scale input maps to full-scale output.
+		const from5 = (v: number) => (v << 3) | (v >> 2);
+		const from6 = (v: number) => (v << 2) | (v >> 4);
+		const from4 = (v: number) => (v << 4) | v;
+
+		for (let i = 0; i < pixelData.data.length; i += 4) {
+			const value = texData.readUint16();
+
+			let R: number, G: number, B: number, A: number;
+			if (formatCode === 2) { // 565 - no alpha channel
+				R = from5((value >> 11) & 0x1F);
+				G = from6((value >> 5) & 0x3F);
+				B = from5(value & 0x1F);
+				A = 255;
+			} else if (formatCode === 3) { // 4444
+				A = from4((value >> 12) & 0x0F);
+				R = from4((value >> 8) & 0x0F);
+				G = from4((value >> 4) & 0x0F);
+				B = from4(value & 0x0F);
+			} else { // 1555, and 555 which is the same minus the alpha bit
+				A = (formatCode === 7) ? 255 : (((value >> 15) & 0x01) ? 255 : 0);
+				R = from5((value >> 10) & 0x1F);
+				G = from5((value >> 5) & 0x1F);
+				B = from5(value & 0x1F);
+			}
+
+			pixelData.data[i] = R;
+			pixelData.data[i + 1] = G;
+			pixelData.data[i + 2] = B;
+			pixelData.data[i + 3] = A;
+		}
+
+		return pixelData;
 	}
 
 	static fromBGRA(textureData: TextureData): PixelData {
